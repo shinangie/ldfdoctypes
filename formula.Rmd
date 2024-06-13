@@ -115,10 +115,11 @@ rm(doctypes, k_vector, k_docket, k_cod, k_appellate, k_mba, k_rfa, k_rfp, k_rfi,
 # measure run time
 start <- Sys.time()
 
-# establish export data (container for categorized files)
-id <- c(data$NDDOCID)
-doctype <- c(rep(NA, length(id)))
-export <- data.frame(id, doctype)
+# establish export data (container to be populated by for loop)
+id <- c(data$NDDOCID) # pulling a copy of the id column
+comment <- c(data$`@Comments`) # pulling a copy of the comments column
+doctype <- c(rep(NA, length(id))) # making a blank column as the primary container for predicted doctypes
+export <- data.frame(id, comment, doctype) # squashing the columns all together into one table
 
 # search, for every row in data (every file in netdocs)...
 for(i in 1:nrow(data)) {
