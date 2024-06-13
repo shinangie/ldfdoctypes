@@ -54,7 +54,7 @@ k_docket <- list("docket", "court documents", "ecfx")
 k_cod <- list("attorney admission", "notice of admission", "noa" , "j-memo", 
            "contact", "common interest", "counsel agreement", "phv", 
            "pro hac vice", "cgs", "attorney registration", 
-           "atty registration", # asterisk / find wildcard equivalent
+           "atty registration", # asterisk / need to find wildcard equivalent
            "ecf registration", "e-noticing", "e-filing", "pacer link")
 k_appellate <- list("scotus", "merits br", "cert petition", "appellate", 
                  "th cir", "st cir", "nd cir", "rd cir", "circuit", 
@@ -64,8 +64,7 @@ k_appellate <- list("scotus", "merits br", "cert petition", "appellate",
                  "ca1", "ca2", "ca3", "ca4", "ca5", "ca6", "ca7", 
                  "ca8", "ca9", "ca10", "ca11", "cadc", "cafc")
 k_mba <- list("discovery mot", "to dismiss", "summary judgement", "in limine", 
-           "daubert", # add deere?
-           "unitary status", "argument", "moot", "prelim", "injunction", 
+           "daubert", "unitary status", "argument", "moot", "prelim", "injunction", 
            "class cert", "intervention", "amicus", "draft", "amend", "compel", 
            "mtc", "response br", "reply br", "in opp", "in supp", 
            "opp to", "supp to", "opp. to", "supp. to", "mot.", "to file", 
@@ -82,12 +81,11 @@ k_docprod <- list("production", "privilege", "privilege log", "review protocol",
                "production tracker", "hot doc", "discovery request", 
                "discovery resp", "district report", "review", "prod")
 k_idisc <- list("disclosure")
-k_setmed <- list("settlement", "offer", "terms", # might get confused with contracts
-              "mediation")
+k_setmed <- list("settlement", "offer", "terms", "mediation")
 k_corr <- list("correspondence", "email", "letter", "ltr")
-k_lrmemo <- list("legal research", "analysis", "memorandum") # add memo?
+k_lrmemo <- list("legal research", "analysis", "memorandum") 
 k_factr <- list("factual", "site", "map", "census", "interview", "scholarly", 
-             "private investigator", "pi", # might get confused with prelim inj
+             "private investigator", "pi", 
              "academic", "fact witness", "data", "photo", "research")
 k_experts <- list("expert")
 k_clients <- list("flyer", "client engagement", "brochure", "client contacts", 
@@ -98,7 +96,7 @@ k_vendors <- list("invoice", "contract", "agreement", "vendor", "consultant",
 k_comms <- list("press", "release", "talking point", "news", "press conference", 
              "media", "comms")
 k_trial <- list("trial",  "hearing", "demonstrative", "witness list", "fof", 
-             "findings of ract", "conclusions of law", "direct", "cross", 
+             "findings of fact", "conclusions of law", "direct", "cross", 
              "examination")
 
 # make a column of lists
