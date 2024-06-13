@@ -1,0 +1,186 @@
+---
+title: "manny's formula"
+output: html_document
+date: "2024-06-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("~/Documents/RStudio/netdocs")
+
+# install.packages("tidyverse")
+library(tidyverse)
+
+# install.packages("readxl")
+library(readxl)
+
+# install.packages(rlang)
+library(rlang)
+
+data <- read_excel("Litigation Documents As of 6-5-24, normal version.xlsx")
+# data <- read_excel("Litigation Documents Sample.xlsx")
+```
+
+```{r doctypes and keywords}
+
+# list of document types (ordered by hierarchy)
+doctypes <- c("Docket",
+              "Case Opening Documents",
+              "Experts",
+              "Requests for Admission",
+              "Requests for Information",
+              "Interrogatories",
+              "Trial/Hearings",
+              "Depositions",
+              "Initial Disclosures",
+              "Requests for Production",
+              "Document Production & Review",
+              "Appellate Brief & Oral Arguments",
+              "Motions, Briefs, & Arguments (non-appellate)",
+              "Clients",
+              "Vendors/Consultants",
+              "Legal Research & Memoranda",
+              "Factual Research",
+              "Settlement/Mediation",
+              "Correspondence, Emails",
+              "Communication Strategy")
+
+# establish keywords for each doctype (ordered by hierarchy)
+
+k_docket <- list("docket", "court documents", "ecfx")
+k_cod <- list("attorney admission", "notice of admission", "noa" , "j-memo", 
+           "contact", "common interest", "counsel agreement", "phv", 
+           "pro hac vice", "cgs", "attorney registration", 
+           "atty registration", # asterisk / find wildcard equivalent
+           "ecf registration", "e-noticing", "e-filing", "pacer link")
+k_appellate <- list("scotus", "merits br", "cert petition", "appellate", 
+                 "th cir", "st cir", "nd cir", "rd cir", "circuit", 
+                 "appeal", "stay pending appeal", "en banc",  "oral arg", 
+                 "1ca", "2ca", "3ca", "4ca", "5ca", "6ca", "7ca",  
+                 "8ca", "9ca", "10ca", "11ca", "dcca", "fcca",
+                 "ca1", "ca2", "ca3", "ca4", "ca5", "ca6", "ca7", 
+                 "ca8", "ca9", "ca10", "ca11", "cadc", "cafc")
+k_mba <- list("discovery mot", "to dismiss", "summary judgement", "in limine", 
+           "daubert", # add deere?
+           "unitary status", "argument", "moot", "prelim", "injunction", 
+           "class cert", "intervention", "amicus", "draft", "amend", "compel", 
+           "mtc", "response br", "reply br", "in opp", "in supp", 
+           "opp to", "supp to", "opp. to", "supp. to", "mot.", "to file", 
+           "to dismiss", "mtd", "withdraw")
+k_rfa <- list("request for admission", "requests for admission", "rfa")
+k_rfp <- list("request for production", "requests for production", "rfp", "r4p")
+k_rfi <- list("request for information", "requests for information", "rfi",
+           "info req")
+k_interro <- list("interrogatory", "interrogatories")
+k_depo <- list("deposition subpoena", "deposition notice", "errata", 
+               "deposition", "digest", "deposition outline", "deposition note",
+               "depo")
+k_docprod <- list("production", "privilege", "privilege log", "review protocol", 
+               "production tracker", "hot doc", "discovery request", 
+               "discovery resp", "district report", "review", "prod")
+k_idisc <- list("disclosure")
+k_setmed <- list("settlement", "offer", "terms", # might get confused with contracts
+              "mediation")
+k_corr <- list("correspondence", "email", "letter", "ltr")
+k_lrmemo <- list("legal research", "analysis", "memorandum") # add memo?
+k_factr <- list("factual", "site", "map", "census", "interview", "scholarly", 
+             "private investigator", "pi", # might get confused with prelim inj
+             "academic", "fact witness", "data", "photo", "research")
+k_experts <- list("expert")
+k_clients <- list("flyer", "client engagement", "brochure", "client contacts", 
+               "retainer", "plaintiff search", 
+               "litigation hold", "from client", "client")
+k_vendors <- list("invoice", "contract", "agreement", "vendor", "consultant", 
+               "receipt", "payment")
+k_comms <- list("press", "release", "talking point", "news", "press conference", 
+             "media", "comms")
+k_trial <- list("trial",  "hearing", "demonstrative", "witness list", "fof", 
+             "findings of ract", "conclusions of law", "direct", "cross", 
+             "examination")
+
+k_vector <- as.vector(list(k_docket, k_cod, k_experts, k_rfa, k_rfi, k_interro,
+                           k_trial, k_depo, k_idisc, k_rfp, k_docprod, k_appellate,
+                           k_mba, k_clients, k_vendors, k_lrmemo, k_factr, k_setmed,
+                           k_corr, k_comms))
+
+kw <- data.frame(doctypes)
+kw$keywords <- k_vector
+
+rm(doctypes, k_vector, k_docket, k_cod, k_appellate, k_mba, k_rfa, k_rfp, k_rfi, k_interro, k_depo, k_docprod, k_idisc, k_setmed, k_corr, k_lrmemo, k_factr, k_experts, k_clients, k_vendors, k_comms, k_trial)
+```
+
+```{r search ifs}
+
+# measure run time
+start <- Sys.time()
+
+# establish export data (container for categorized files)
+id <- c(data$NDDOCID)
+doctype <- c(rep(NA, length(id)))
+export <- data.frame(id, doctype)
+
+# search, for every row in data (every file in netdocs)...
+for(i in 1:nrow(data)) {
+  
+  profiled <- FALSE
+  
+  # ... for every row in keywords (every doctype in hierarchy)...
+  for (j in 1:nrow(kw)) {
+    
+    # ... and compare the keywords of current doctype to row, using
+    # a function that detects any selection of substrings in a primary string
+    tf <- str_detect( 
+      
+      # content of the row as one string
+      paste(data[i,], collapse = " "), 
+      
+      # look for a match with a keyword of the current doctype
+      regex(as.character(unlist(kw[j, -1])),
+            
+            # make search case-insensitive
+            ignore_case = TRUE)) 
+    
+    # for every keyword...
+    for (k in 1:length(tf)) {
+      
+      # if a keyword is contained in the row...
+      if (tf[k]) { 
+        
+        # ... then take the doctype corresponding to the keyword and
+        # use the export container to store that categorization.
+        
+        export[i,]$doctype <- kw[j, 1]
+        
+        # tell code this file has been successfully profiled
+        profiled <- TRUE
+        
+        # exit the match check 
+        break
+        
+      }
+      
+      # if successfully profiled, exit the keyword loop
+      if (profiled) break
+      
+      # else, move on to the next keyword
+      else next
+      
+    }
+    
+    # if successfully profiled, exit the doctype loop
+    if (profiled) break
+    
+    # else, move on to the next doctype
+    else next
+    
+  }
+  
+}
+
+end <- Sys.time()
+runtime <- round(start - end, 2)/360
+
+write_csv(export, "predicted_doctypes.csv")
+```
+
