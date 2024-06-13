@@ -21,8 +21,14 @@ library(readxl)
 # install.packages(rlang)
 library(rlang)
 
-data <- read_excel("Litigation Documents As of 6-5-24, normal version.xlsx")
 # data <- read_excel("Litigation Documents Sample.xlsx")
+# data <- read_excel("Litigation Documents As of 6-5-24, normal version.xlsx")
+data <- read_excel("Litigation Documents As of 6-12-24.xlsx")
+
+data <- data %>% 
+  select(id = NDDOCID,
+         name,
+         comment = `@Comments`)
 ```
 
 ```{r doctypes and keywords}
@@ -118,11 +124,8 @@ rm(doctypes, k_vector, k_docket, k_cod, k_appellate, k_mba, k_rfa, k_rfp, k_rfi,
 # measure run time
 start <- Sys.time()
 
-# establish export data (container to be populated by for loop)
-id <- c(data$NDDOCID) # pulling a copy of the id column
-comment <- c(data$`@Comments`) # pulling a copy of the comments column
-doctype <- c(rep(NA, length(id))) # making a blank column as the primary container for predicted doctypes
-export <- data.frame(id, comment, doctype) # squashing the columns all together into one table
+# make blank column (container to be populated by for loop)
+doctype <- c(rep(NA, nrow(data)))
 
 # search, for every row in data (every file in netdocs)...
 for(i in 1:nrow(data)) {
@@ -154,7 +157,7 @@ for(i in 1:nrow(data)) {
         # ... then take the doctype corresponding to the keyword and
         # use the export container to store that categorization.
         
-        export[i,]$doctype <- kw[j, 1]
+        doctype[i] <- kw[j, 1]
         
         # tell code this file has been successfully profiled
         profiled <- TRUE
@@ -184,9 +187,11 @@ for(i in 1:nrow(data)) {
 
 # measure run time
 end <- Sys.time()
-runtime <- round(start - end, 2)/360
+runtime <- round(end - start, 2)
+runtime/60
+
+data$doctype <- doctype
 
 # export data
-write_csv(export, "predicted_doctypes.csv")
+write_csv(data, "predicted_doctypes.csv")
 ```
-
