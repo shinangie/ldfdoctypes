@@ -147,7 +147,6 @@ start <- Sys.time()
 # make blank column (container to be populated by for loop)
 doctype <- c(rep(NA, nrow(data)))
 keywords <- c(rep(NA, nrow(data)))
-orphan <- c(rep(NA, nrow(data)))
 
 # search, for every row in data (every file in netdocs)...
 for(i in 1:nrow(data)) {
@@ -220,7 +219,7 @@ for(i in 1:nrow(data)) {
     
     else {
       
-      doctype[i] <- "orphan"
+      doctype[i] <- "No Doctype"
       
     }
     
