@@ -4,7 +4,7 @@ output: html_document
 date: "2024-06-12"
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 setwd("~/Documents/RStudio/netdocs")
@@ -28,7 +28,7 @@ data <- read_excel("Litigation Documents As of 6-12-24.xlsx")
 data <- data %>% 
   select(id = NDDOCID,
          comment = `@Comments`,
-         author = )
+         name)
 ```
 
 ```{r doctypes and keywords}
@@ -70,12 +70,12 @@ k_appellate <- list("scotus", "merits br", "cert petition", "appellate",
                  "8ca", "9ca", "10ca", "11ca", "dcca", "fcca",
                  "ca1", "ca2", "ca3", "ca4", "ca5", "ca6", "ca7", 
                  "ca8", "ca9", "ca10", "ca11", "cadc", "cafc")
-k_mba <- list("discovery mot", "to dismiss", "summary judgement", "in limine", 
-           "daubert", "unitary status", "argument", "moot", "prelim", "injunction", 
-           "class cert", "intervention", "amicus", "draft", "amend", "compel", 
-           "mtc", "response br", "reply br", "in opp", "in supp", 
-           "opp to", "supp to", "opp. to", "supp. to", "mot.", "to file", 
-           "to dismiss", "mtd", "withdraw")
+k_mba <- list("motion", "discovery mot", "to dismiss", "summary judgement", 
+              "in limine", "daubert", "unitary status", "argument", "moot", 
+              "prelim", "injunction", "class cert", "intervention", "amicus", 
+              "draft", "amend", "compel", "mtc", "response br", "reply br", 
+              "in opp", "in supp", "opp to", "supp to", "opp. to", "supp. to", 
+              "mot.", "to file", "to dismiss", "mtd", "withdraw")
 k_rfa <- list("request for admission", "requests for admission", "rfa")
 k_rfp <- list("request for production", "requests for production", "rfp", "r4p")
 k_rfi <- list("request for information", "requests for information", "rfi",
