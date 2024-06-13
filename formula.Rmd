@@ -9,12 +9,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 setwd("~/Documents/RStudio/netdocs")
 
+# tidyverse lets me use various "clean" syntax operators and functions!
 # install.packages("tidyverse")
 library(tidyverse)
 
+# readxl lets me import excel data into the code
 # install.packages("readxl")
 library(readxl)
 
+# rlang lets me detect strings
 # install.packages(rlang)
 library(rlang)
 
@@ -47,7 +50,6 @@ doctypes <- c("Docket",
               "Communication Strategy")
 
 # establish keywords for each doctype (ordered by hierarchy)
-
 k_docket <- list("docket", "court documents", "ecfx")
 k_cod <- list("attorney admission", "notice of admission", "noa" , "j-memo", 
            "contact", "common interest", "counsel agreement", "phv", 
@@ -99,14 +101,17 @@ k_trial <- list("trial",  "hearing", "demonstrative", "witness list", "fof",
              "findings of ract", "conclusions of law", "direct", "cross", 
              "examination")
 
+# make a column of lists
 k_vector <- as.vector(list(k_docket, k_cod, k_experts, k_rfa, k_rfi, k_interro,
                            k_trial, k_depo, k_idisc, k_rfp, k_docprod, k_appellate,
                            k_mba, k_clients, k_vendors, k_lrmemo, k_factr, k_setmed,
                            k_corr, k_comms))
 
+# put the doctypes and keywords together in one table, making them attributable to each other by row
 kw <- data.frame(doctypes)
 kw$keywords <- k_vector
 
+# clean the environment of unneeded data products
 rm(doctypes, k_vector, k_docket, k_cod, k_appellate, k_mba, k_rfa, k_rfp, k_rfi, k_interro, k_depo, k_docprod, k_idisc, k_setmed, k_corr, k_lrmemo, k_factr, k_experts, k_clients, k_vendors, k_comms, k_trial)
 ```
 
@@ -179,9 +184,11 @@ for(i in 1:nrow(data)) {
   
 }
 
+# measure run time
 end <- Sys.time()
 runtime <- round(start - end, 2)/360
 
+# export data
 write_csv(export, "predicted_doctypes.csv")
 ```
 
