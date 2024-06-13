@@ -28,10 +28,11 @@ data <- read_excel("Litigation Documents As of 6-12-24.xlsx")
 data <- data %>% 
   select(id = NDDOCID,
          comment = `@Comments`,
-         name)
+         name,
+         old = `@Document Type - LIT`)
 ```
 
-```{r doctypes and keywords}
+```{r making keywords table}
 
 # list of document types (ordered by hierarchy)
 doctypes <- c("Docket",
@@ -62,7 +63,7 @@ k_cod <- list("attorney admission", "notice of admission", "noa" , "j-memo",
            "pro hac vice", "cgs", "attorney registration", 
            "atty registration", # asterisk / need to find wildcard equivalent
            "ecf registration", "e-noticing", "e-filing", "pacer link",
-           "counsel agreement")
+           "counsel agreement", "case opening document")
 k_appellate <- list("scotus", "merits br", "cert petition", "appellate", 
                  "th cir", "st cir", "nd cir", "rd cir", "circuit", 
                  "appeal", "stay pending appeal", "en banc",  "oral arg", 
@@ -75,7 +76,7 @@ k_mba <- list("motion", "discovery mot", "to dismiss", "summary judgement",
               "prelim", "injunction", "class cert", "intervention", "amicus", 
               "draft", "amend", "compel", "mtc", "response br", "reply br", 
               "in opp", "in supp", "opp to", "supp to", "opp. to", "supp. to", 
-              "mot.", "to file", "to dismiss", "mtd", "withdraw")
+              "mot.", "to file", "to dismiss", "mtd", "withdraw", "brief")
 k_rfa <- list("request for admission", "requests for admission", "rfa")
 k_rfp <- list("request for production", "requests for production", "rfp", "r4p")
 k_rfi <- list("request for information", "requests for information", "rfi",
@@ -101,7 +102,7 @@ k_clients <- list("flyer", "client engagement", "brochure", "client contacts",
 k_vendors <- list("invoice", "contract", "vendor", "consultant", "receipt", 
                   "payment")
 k_comms <- list("press", "release", "talking point", "news", "press conference", 
-             "media", "comms")
+             "media", "communications", "comms")
 k_trial <- list("trial",  "hearing", "demonstrative", "witness list", "fof", 
              "findings of fact", "conclusions of law", "direct", "cross", 
              "examination")
@@ -145,6 +146,8 @@ start <- Sys.time()
 
 # make blank column (container to be populated by for loop)
 doctype <- c(rep(NA, nrow(data)))
+keywords <- c(rep(NA, nrow(data)))
+orphan <- c(rep(NA, nrow(data)))
 
 # search, for every row in data (every file in netdocs)...
 for(i in 1:nrow(data)) {
@@ -166,6 +169,8 @@ for(i in 1:nrow(data)) {
             
             # make search case-insensitive
             ignore_case = TRUE)) 
+    
+    keywords[i] <- list(tf)
     
     # for every keyword...
     for (k in 1:length(tf)) {
@@ -199,6 +204,25 @@ for(i in 1:nrow(data)) {
     
     # else, move on to the next doctype
     else next
+    
+  }
+  
+  # check each profiled row in data for doctype "na"
+  if (is.na(doctype[i])) {
+    
+    # check the old doctype for "legacy"
+    if (str_detect(paste(data$old[i]), "LEGACY")) {
+      
+      # change doctype to flag legacy
+      doctype[i] <- "Legacy"
+      
+    }
+    
+    else {
+      
+      doctype[i] <- "orphan"
+      
+    }
     
   }
   
