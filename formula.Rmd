@@ -23,9 +23,13 @@ library(rlang)
 
 # data <- read_excel("Litigation Documents Sample.xlsx")
 # data <- read_excel("Litigation Documents As of 6-5-24, normal version.xlsx")
-data <- read_excel("Litigation Documents As of 6-12-24.xlsx")
+sheet <- read_excel("Litigation Documents As of 6-12-24.xlsx")
 
-data <- data %>% 
+matters <- unique(sheet$`@Matter - LIT`)
+nonlit <- matters[470:length(matters)]
+
+cinv <- sheet %>% 
+  filter(!`@Matter - LIT` %in% nonlit) %>%
   select(id = NDDOCID,
          comment = `@Comments`,
          name,
@@ -60,10 +64,9 @@ doctypes <- c("Docket",
 k_docket <- list("docket", "court doc", "ecfx")
 k_cod <- list("attorney admission", "notice of admission", "noa" , "j-memo", 
            "contact", "common interest", "counsel agreement", "phv", 
-           "pro hac vice", "cgs", "attorney registration", 
-           "atty registration", # asterisk / need to find wildcard equivalent
-           "ecf registration", "e-noticing", "e-filing", "pacer link",
-           "counsel agreement", "case opening document")
+           "pro hac vice", "cgs", "attorney registration", "appear",
+           "atty registration", "ecf registration", "e-noticing", "e-filing", 
+           "pacer link", "counsel agreement", "case opening document")
 k_appellate <- list("scotus", "merits br", "cert petition", "appellate", 
                  "th cir", "st cir", "nd cir", "rd cir", "circuit", 
                  "appeal", "stay pending appeal", "en banc",  "oral arg", 
@@ -74,7 +77,7 @@ k_appellate <- list("scotus", "merits br", "cert petition", "appellate",
 k_mba <- list("motion", "discovery mot", "to dismiss", "summary judgement", 
               "in limine", "daubert", "unitary status", "argument", "moot", 
               "prelim", "injunction", "class cert", "intervention", "amicus", 
-              "draft", "amend", "compel", "mtc", "response br", "reply br", 
+              "amend", "compel", "mtc", "response br", "reply br", "complaint",
               "in opp", "in supp", "opp to", "supp to", "opp. to", "supp. to", 
               "mot.", "to file", "to dismiss", "mtd", "withdraw", "brief")
 k_rfa <- list("request for admission", "requests for admission", "rfa")
@@ -92,9 +95,9 @@ k_idisc <- list("disclosure")
 k_setmed <- list("settlement", "offer", "mediation")
 k_corr <- list("correspondence", "email", "letter", "ltr")
 k_lrmemo <- list("legal research", "analysis", "memo") 
-k_factr <- list("factual", "site", "map", "census", "interview", "scholarly", 
-             "private investigator", "academic", "fact witness", "data", 
-             "photo", "research", "tracker")
+k_factr <- list("fact", "site", "map", "census", "interview", "scholarly", 
+             "private investigator", "academic", "data", "photo", "research",
+             "tracker")
 k_experts <- list("expert")
 k_clients <- list("flyer", "client engagement", "brochure", "client contacts", 
                "client retainer", "plaintiff search", 
@@ -105,7 +108,7 @@ k_comms <- list("press", "release", "talking point", "news", "press conference",
              "media", "communications", "comms")
 k_trial <- list("trial",  "hearing", "demonstrative", "witness list", "fof", 
              "findings of fact", "conclusions of law", "direct", "cross", 
-             "examination")
+             "examination", "prep")
 
 # if only true keyword in mba is drafts, then don't break and search for 
 
@@ -145,15 +148,14 @@ rm(doctypes, k_vector, k_docket, k_cod, k_appellate, k_mba, k_rfa, k_rfp, k_rfi,
 start <- Sys.time()
 
 # make blank column (container to be populated by for loop)
-doctype <- c(rep(NA, nrow(data)))
-keywords <- c(rep(NA, nrow(data)))
+doctype <- c(rep(NA, nrow(cinv)))
 
-# search, for every row in data (every file in netdocs)...
-for(i in 1:nrow(data)) {
+# search, for every row in cinv (every file in netdocs)...
+for(i in 1:nrow(cinv)) {
   
   profiled <- FALSE
   
-  # ... for every row in keywords (every doctype in hierarchy)...
+  # ... for every doctype...
   for (j in 1:nrow(kw)) {
     
     # ... and compare the keywords of current doctype to row, using
@@ -161,7 +163,7 @@ for(i in 1:nrow(data)) {
     tf <- str_detect( 
       
       # content of the row as one string
-      paste(data[i,], collapse = " "), 
+      paste(cinv[i,], collapse = " "), 
       
       # look for a match with a keyword of the current doctype
       regex(as.character(unlist(kw[j, -1])),
@@ -169,12 +171,10 @@ for(i in 1:nrow(data)) {
             # make search case-insensitive
             ignore_case = TRUE)) 
     
-    keywords[i] <- list(tf)
-    
     # for every keyword...
     for (k in 1:length(tf)) {
       
-      # if a keyword is contained in the row...
+      # ... if a keyword is contained in the row...
       if (tf[k]) { 
         
         # ... then take the doctype corresponding to the keyword and
@@ -206,11 +206,11 @@ for(i in 1:nrow(data)) {
     
   }
   
-  # check each profiled row in data for doctype "na"
+  # check each profiled row in cinv for doctype "na"
   if (is.na(doctype[i])) {
     
     # check the old doctype for "legacy"
-    if (str_detect(paste(data$old[i]), "LEGACY")) {
+    if (str_detect(paste(cinv$old[i]), "LEGACY")) {
       
       # change doctype to flag legacy
       doctype[i] <- "Legacy"
@@ -219,6 +219,7 @@ for(i in 1:nrow(data)) {
     
     else {
       
+      # change doctype to flag orphan
       doctype[i] <- "No Doctype"
       
     }
@@ -230,10 +231,72 @@ for(i in 1:nrow(data)) {
 # measure run time
 end <- Sys.time()
 runtime <- round(end - start, 2)
-runtime/60
 
-data$doctype <- doctype
+runtime
+sum(doctype == "Legacy")
+sum(doctype == "No Doctype")
+
+cinv$doctype <- doctype
+```
+
+```{r check cinv}
+
+# check for specific keywords
+# data.frame(as.character(unlist(kw[j, -1])), tf) %>% 
+#   filter(tf == T) %>% 
+#   select(-tf) %>% 
+#   array(.)
+
+# check for top frequency keywords
+# manual <- data %>% 
+#   filter(doctype %in% c("Legacy", "No Doctype"))
+# 
+# split <- strsplit(c(manual$comment, manual$name), "[[:punct:][:space:]]+") %>% 
+#   unlist() %>% 
+#   as.vector(.)
+# 
+# analysis <- as.data.frame(split) %>% 
+#   group_by(tolower(split)) %>% 
+#   summarize(count = n()) %>% 
+#   arrange(desc(count))
+# 
+# # manually slice top 10 keywords
+# analysis[c(9, # discovery
+#            20, # report
+#            22, # images
+#            28, # prep
+#            29, # fact
+#            49, # reports
+#            73, # ediscovery
+#            80, # draft
+#            89, # pleadings
+#            111, # drafts
+#            118, # order
+#            126, # exhibit
+#            129 # complaint
+#            ),]
+```
+
+```{r non-cinv}
+
+# filter for non-cinv matters and pull old doctypes by id
+sdoctype <- sheet %>% 
+  filter(`@Matter - LIT` %in% nonlit) %>% 
+  select(id = NDDOCID,
+         doctype = `@Document Type - LIT`)
+
+```
+
+
+```{r export}
+
+# combine
+all <- cinv %>% 
+  select(id, doctype) %>% 
+  rbind(sdoctype)
 
 # export data
-write_csv(data, "predicted_doctypes.csv")
+write_csv(cinv, "cinvdoctypes.csv")
+write_csv(all, "alldoctypes.csv")
 ```
+
